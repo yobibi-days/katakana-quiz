@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カタカナを おぼえよう！</title>
+
+<!-- ===== Google Fonts（Zen Maru Gothic）※唯一の外部依存 ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Klee+One:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================
+   カラーパレット（パステル：ピンク・水色・黄色・緑）
+   ========================================================= */
+:root{
+  --pink:        #ffb6d5;   /* メインピンク      */
+  --pink-deep:   #ff8fbf;   /* 濃いピンク        */
+  --sky:         #aee2ff;   /* 水色（空）        */
+  --sky-light:   #e6f6ff;   /* 薄い水色（背景）  */
+  --yellow-main: #ffe57a;   /* 黄色              */
+  --green:       #b8e986;   /* 草原・正解        */
+  --green-deep:  #7ac74f;   /* 濃い緑（正解強調）*/
+  --red:         #ff8a8a;   /* 不正解            */
+  --text:        #5b4636;   /* 文字色（こげ茶）  */
+  --white:       #ffffff;
+}
+
+/* =========================================================
+   全体共通
+   ========================================================= */
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html,body{
+  margin:0; padding:0;
+  height:100%;
+  font-family:'Zen Maru Gothic', sans-serif;
+  color:var(--text);
+  overflow-x:hidden;
+}
+
+body{
+  background:var(--sky-light);
+}
+
+/* 画面共通：表示・非表示の切り替え */
+.screen{ display:none; min-height:100vh; }
+.screen.active{ display:block; }
+
+/* ボタン共通の土台（大きく・丸い・タッチ＆クリック対応） */
+button{
+  font-family:inherit;
+  cursor:pointer;
+  border:none;
+  user-select:none;
+  touch-action:manipulation;
+}
+
+/* =========================================================
+   1. スタート画面
+   ========================================================= */
+#startScreen{
+  position:relative;
+  width:100%;
+  min-height:100vh;
+  overflow:hidden;
+}
+
+/* 背景SVG（空と草原）を画面いっぱいに敷く */
+#startScreen .bg-svg{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  z-index:0;
+}
+
+/* 雲（ゆっくり横に流れる）。SVG内ではなくHTML要素で配置しアニメさせる */
+.cloud{
+  position:absolute;
+  z-index:1;
+  opacity:.95;
+  animation:cloudMove linear infinite;
+}
+.cloud.c1{ top:8%;  left:-20%; animation-duration:38s; }
+.cloud.c2{ top:18%; left:-40%; animation-duration:52s; transform:scale(.7); }
+.cloud.c3{ top:5%;  left:-60%; animation-duration:64s; transform:scale(1.2); }
+@keyframes cloudMove{
+  from{ transform:translateX(0); }
+  to  { transform:translateX(135vw); }
+}
+
+/* スタート画面の中身を中央寄せで重ねる */
+.start-inner{
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding:24px 16px 60px;
+  min-height:100vh;
+  text-align:center;
+}
+
+/* タイトル（大きく・カラフル・フェードイン） */
+.title{
+  font-size:clamp(2.4rem, 8vw, 4.6rem);
+  font-weight:900;
+  margin:10px 0 0;
+  line-height:1.25;
+  opacity:0;
+  animation:fadeInDown 1s ease-out .2s forwards;
+}
+/* 1文字ずつ色を変えてカラフルに */
+.title .c0{ color:#ff7eb3; }
+.title .c1{ color:#ffa600; }
+.title .c2{ color:#4cc9f0; }
+.title .c3{ color:#7ac74f; }
+.title .c4{ color:#b66dff; }
+.title .c5{ color:#ff7eb3; }
+
+.subtitle{
+  font-size:clamp(1.1rem, 3.5vw, 1.6rem);
+  font-weight:500;
+  color:#6b8e23;
+  margin:10px 0 0;
+  opacity:0;
+  animation:fadeInDown 1s ease-out .6s forwards;
+}
+
+@keyframes fadeInDown{
+  from{ opacity:0; transform:translateY(-22px); }
+  to  { opacity:1; transform:translateY(0); }
+}
+
+/* うさぎを置くステージ（ふわふわ上下） */
+.rabbit-stage{
+  margin:18px 0 6px;
+  width:min(280px, 62vw);
+  animation:floaty 3s ease-in-out infinite;
+}
+@keyframes floaty{
+  0%,100%{ transform:translateY(0); }
+  50%    { transform:translateY(-10px); }
+}
+
+/* ボタン群 */
+.menu{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  margin-top:8px;
+  width:min(420px, 90vw);
+}
+
+/* メインの目立つボタン */
+.btn-main{
+  font-size:clamp(1.4rem, 5vw, 2rem);
+  font-weight:700;
+  color:var(--white);
+  background:linear-gradient(180deg, #ff9ecb 0%, var(--pink-deep) 100%);
+  padding:22px 18px;
+  border-radius:28px;
+  box-shadow:0 8px 0 #e06fa0, 0 12px 18px rgba(0,0,0,.18);
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.btn-main:hover{ filter:brightness(1.04); }
+.btn-main:active{
+  transform:translateY(6px);
+  box-shadow:0 2px 0 #e06fa0, 0 4px 8px rgba(0,0,0,.18);
+}
+
+/* =========================================================
+   2. クイズ画面
+   ========================================================= */
+#quizScreen{
+  background:var(--sky-light);
+  padding:14px 16px 40px;
+}
+
+/* 上部バー（もどる＋スコア） */
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  max-width:720px;
+  margin:0 auto 6px;
+}
+
+.btn-back{
+  font-size:1.1rem;
+  font-weight:700;
+  color:var(--text);
+  background:var(--white);
+  padding:12px 18px;
+  border-radius:20px;
+  box-shadow:0 4px 0 #cfd8dc;
+}
+.btn-back:active{ transform:translateY(3px); box-shadow:0 1px 0 #cfd8dc; }
+
+.score{
+  display:flex;
+  gap:10px;
+  font-weight:700;
+  font-size:1.05rem;
+}
+.score .pill{
+  background:var(--white);
+  padding:10px 16px;
+  border-radius:20px;
+  box-shadow:0 3px 6px rgba(0,0,0,.08);
+  white-space:nowrap;
+}
+.score .pill b{ color:var(--green-deep); }
+.score .pill.total b{ color:var(--sky); }
+.score .pill.total b{ color:#4cabd8; }
+
+/* うさぎ＋吹き出しエリア */
+.quiz-head{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  max-width:720px;
+  margin:6px auto 0;
+}
+
+.quiz-rabbit{
+  width:min(150px, 34vw);
+  flex:0 0 auto;
+}
+
+/* 吹き出し */
+.bubble{
+  position:relative;
+  background:var(--white);
+  border:3px solid var(--pink);
+  border-radius:22px;
+  padding:16px 20px;
+  font-size:clamp(1.1rem, 4vw, 1.6rem);
+  font-weight:700;
+  min-width:140px;
+  max-width:60vw;
+  box-shadow:0 4px 10px rgba(0,0,0,.08);
+  text-align:center;
+}
+/* 吹き出しのしっぽ（左向き） */
+.bubble::before{
+  content:"";
+  position:absolute;
+  left:-18px; top:50%;
+  transform:translateY(-50%);
+  border:9px solid transparent;
+  border-right-color:var(--pink);
+}
+.bubble::after{
+  content:"";
+  position:absolute;
+  left:-13px; top:50%;
+  transform:translateY(-50%);
+  border:8px solid transparent;
+  border-right-color:var(--white);
+}
+
+/* 問題カード */
+.quiz-card{
+  max-width:720px;
+  margin:14px auto 0;
+  background:var(--white);
+  border-radius:28px;
+  padding:24px 18px 28px;
+  box-shadow:0 8px 24px rgba(0,0,0,.10);
+  text-align:center;
+}
+
+/* ひらがな大表示（クリックで再読み上げ） */
+.hira{
+  font-size:clamp(6rem, 28vw, 11rem);
+  font-weight:900;
+  line-height:1;
+  color:var(--text);
+  cursor:pointer;
+  display:inline-block;
+  user-select:none;
+  transition:transform .1s ease;
+}
+.hira:active{ transform:scale(.94); }
+
+/* 問題のひらがな・選択肢カタカナだけ Klee One に変更
+   （ID指定：#hira=大きいひらがな / #choice0,#choice1=選択肢ボタン） */
+#hira, #choice0, #choice1 {
+  font-family: 'Klee One', cursive;
+}
+
+.replay-hint{
+  font-size:.95rem;
+  color:#9a8a7a;
+  margin:6px 0 2px;
+}
+
+.question-label{
+  font-size:clamp(1.3rem, 5vw, 1.9rem);
+  font-weight:700;
+  color:var(--pink-deep);
+  margin:14px 0 4px;
+}
+
+/* 2択ボタン */
+.choices{
+  display:flex;
+  justify-content:center;
+  gap:clamp(16px, 6vw, 40px);
+  margin-top:14px;
+  flex-wrap:wrap;
+}
+.choice{
+  width:clamp(110px, 30vw, 150px);
+  height:clamp(110px, 30vw, 150px);
+  font-size:clamp(4.5rem, 14vw, 6rem);
+  font-weight:900;
+  color:var(--text);
+  background:#fff6fb;
+  border:4px solid var(--pink);
+  border-radius:14px;
+  box-shadow:0 6px 0 #f0b9d4;
+  transition:transform .08s ease, box-shadow .08s ease, background .2s ease, border-color .2s ease;
+}
+.choice:hover:not(:disabled){ filter:brightness(1.03); }
+.choice:active:not(:disabled){ transform:translateY(4px); box-shadow:0 2px 0 #f0b9d4; }
+
+/* 正解（緑＋ポップ） */
+.choice.correct{
+  background:var(--green);
+  border-color:var(--green-deep);
+  box-shadow:0 6px 0 #5fa838;
+  animation:pop .45s ease;
+}
+@keyframes pop{
+  0%{ transform:scale(1); }
+  40%{ transform:scale(1.25); }
+  70%{ transform:scale(.92); }
+  100%{ transform:scale(1); }
+}
+
+/* 不正解（赤＋シェイク） */
+.choice.wrong{
+  background:var(--red);
+  border-color:#e85a5a;
+  box-shadow:0 6px 0 #c94a4a;
+  animation:shake .4s ease;
+}
+@keyframes shake{
+  0%,100%{ transform:translateX(0); }
+  20%{ transform:translateX(-8px); }
+  40%{ transform:translateX(8px); }
+  60%{ transform:translateX(-6px); }
+  80%{ transform:translateX(6px); }
+}
+.choice:disabled{ cursor:default; }
+
+/* 判定メッセージ */
+.result-msg{
+  min-height:2.2em;
+  font-size:clamp(1.3rem, 5vw, 2rem);
+  font-weight:900;
+  margin:18px 0 4px;
+}
+.result-msg.ok{ color:var(--green-deep); }
+.result-msg.ng{ color:#e06666; }
+
+/* カウントダウンバー＋次へボタン */
+.next-area{
+  max-width:720px;
+  margin:10px auto 0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+
+.countdown{
+  width:min(420px, 90%);
+  height:14px;
+  background:#e6efe0;
+  border-radius:10px;
+  overflow:hidden;
+  display:none;          /* 正解時のみ表示 */
+}
+.countdown.show{ display:block; }
+.countdown .fill{
+  height:100%;
+  width:100%;
+  background:var(--green-deep);
+  border-radius:10px;
+  transform-origin:left center;
+}
+/* 1.8秒かけて縮む */
+.countdown .fill.run{
+  animation:shrink 1.8s linear forwards;
+}
+@keyframes shrink{
+  from{ transform:scaleX(1); }
+  to  { transform:scaleX(0); }
+}
+
+.btn-next{
+  font-size:1.3rem;
+  font-weight:700;
+  color:var(--white);
+  background:linear-gradient(180deg,#9fe06f,#7ac74f);
+  padding:14px 30px;
+  border-radius:22px;
+  box-shadow:0 5px 0 #5fa838;
+  display:none;          /* 正解時のみ表示 */
+}
+.btn-next.show{ display:inline-block; }
+.btn-next:active{ transform:translateY(3px); box-shadow:0 2px 0 #5fa838; }
+
+/* ちがいのポイント表示 */
+.diff-box{
+  max-width:720px;
+  margin:20px auto 0;
+  background:#fffdf2;
+  border:3px dashed var(--yellow-main);
+  border-radius:20px;
+  padding:14px 18px;
+  text-align:center;
+  font-weight:700;
+  font-size:clamp(1rem, 3.6vw, 1.25rem);
+  line-height:1.7;
+}
+.diff-box .diff-title{
+  color:#b8860b;
+  display:block;
+  margin-bottom:6px;
+  font-size:1.1rem;
+}
+.diff-box .diff-row b{ color:var(--pink-deep); }
+
+/* =========================================================
+   3. けっか（ゲーム終了）画面
+   ========================================================= */
+#resultScreen{
+  position:relative;
+  background:linear-gradient(180deg, #fff3fb 0%, #e6f6ff 100%);
+  overflow:hidden;
+}
+.result-wrap{
+  position:relative;
+  z-index:2;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:30px 16px 50px;
+  text-align:center;
+  gap:6px;
+}
+.result-rabbit{
+  width:min(220px, 52vw);
+  animation:floaty 3s ease-in-out infinite;
+}
+.rank-emoji{
+  font-size:clamp(3.5rem, 14vw, 6rem);
+  line-height:1;
+  margin-top:6px;
+  animation:pop .6s ease;
+}
+.rank-name{
+  font-size:clamp(1.8rem, 7vw, 3rem);
+  font-weight:900;
+  margin:6px 0 0;
+  color:var(--pink-deep);
+  animation:fadeInDown .8s ease-out;
+}
+.rank-score{
+  font-size:clamp(1.2rem, 4.5vw, 1.7rem);
+  font-weight:700;
+  color:var(--text);
+  margin:8px 0 18px;
+}
+.rank-score b{
+  color:var(--green-deep);
+  font-size:1.3em;
+}
+.result-buttons{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  width:min(420px, 90vw);
+}
+/* 「いったん おわり」ボタン（控えめな色） */
+.btn-end{
+  font-size:clamp(1.2rem, 4.5vw, 1.6rem);
+  font-weight:700;
+  color:var(--text);
+  background:var(--white);
+  padding:18px 18px;
+  border-radius:28px;
+  box-shadow:0 6px 0 #cfd8dc;
+}
+.btn-end:active{ transform:translateY(4px); box-shadow:0 2px 0 #cfd8dc; }
+
+/* 花火（全問正解時） */
+.fireworks{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  display:none;
+}
+.fireworks.show{ display:block; }
+.fw-particle{
+  position:absolute;
+  width:10px; height:10px;
+  border-radius:50%;
+  opacity:0;
+  animation:fwBurst 1.2s ease-out forwards;
+}
+@keyframes fwBurst{
+  0%  { transform:translate(0,0) scale(1);   opacity:1; }
+  100%{ transform:translate(var(--dx), var(--dy)) scale(.3); opacity:0; }
+}
+
+/* =========================================================
+   うさぎSVGの感情アニメーション
+   ========================================================= */
+/* よろこび：ジャンプ */
+.rabbit-joy{ animation:rabbitJump .8s ease; }
+@keyframes rabbitJump{
+  0%  { transform:translateY(0); }
+  30% { transform:translateY(-28px); }
+  60% { transform:translateY(-14px); }
+  100%{ transform:translateY(0); }
+}
+/* かなしい：wiggle（首をふる） */
+.rabbit-sad{ animation:rabbitWiggle .5s ease; }
+@keyframes rabbitWiggle{
+  0%,100%{ transform:rotate(0); }
+  20%{ transform:rotate(-8deg); }
+  40%{ transform:rotate(8deg); }
+  60%{ transform:rotate(-8deg); }
+  80%{ transform:rotate(8deg); }
+}
+
+/* よろこび時に光る★（SVG内の .joy-star を制御） */
+.joy-star{ opacity:0; transform-origin:center; }
+.rabbit-joy .joy-star{ animation:starTwinkle .8s ease; }
+@keyframes starTwinkle{
+  0%  { opacity:0; transform:scale(.2) rotate(0deg); }
+  40% { opacity:1; transform:scale(1.3) rotate(20deg); }
+  100%{ opacity:0; transform:scale(1) rotate(40deg); }
+}
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+     1. スタート画面
+     ========================================================= -->
+<section id="startScreen" class="screen active">
+
+  <!-- 背景：空と草原（SVG） -->
+  <svg class="bg-svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <!-- 空 -->
+    <rect x="0" y="0" width="800" height="600" fill="#aee2ff"/>
+    <rect x="0" y="0" width="800" height="430" fill="#bfeaff"/>
+    <!-- おひさま -->
+    <circle cx="690" cy="90" r="55" fill="#ffe57a"/>
+    <circle cx="690" cy="90" r="70" fill="#ffe57a" opacity="0.35"/>
+    <!-- 草原（ゆるやかな丘） -->
+    <path d="M0 430 Q200 380 400 420 T800 410 L800 600 L0 600 Z" fill="#b8e986"/>
+    <path d="M0 480 Q250 440 500 470 T800 460 L800 600 L0 600 Z" fill="#a0dd6e"/>
+    <!-- 小さな花を草原にちりばめる -->
+    <g>
+      <!-- 花を描く簡易グループ（中心の黄色＋5枚の花びら） -->
+      <g transform="translate(90,520)">
+        <circle r="6" fill="#ffd84d"/>
+        <circle cx="0" cy="-12" r="6" fill="#ff9ecb"/>
+        <circle cx="11" cy="-4" r="6" fill="#ff9ecb"/>
+        <circle cx="7" cy="10" r="6" fill="#ff9ecb"/>
+        <circle cx="-7" cy="10" r="6" fill="#ff9ecb"/>
+        <circle cx="-11" cy="-4" r="6" fill="#ff9ecb"/>
+      </g>
+      <g transform="translate(230,560)">
+        <circle r="6" fill="#ffd84d"/>
+        <circle cx="0" cy="-12" r="6" fill="#fff"/>
+        <circle cx="11" cy="-4" r="6" fill="#fff"/>
+        <circle cx="7" cy="10" r="6" fill="#fff"/>
+        <circle cx="-7" cy="10" r="6" fill="#fff"/>
+        <circle cx="-11" cy="-4" r="6" fill="#fff"/>
+      </g>
+      <g transform="translate(620,545)">
+        <circle r="6" fill="#ffd84d"/>
+        <circle cx="0" cy="-12" r="6" fill="#b66dff"/>
+        <circle cx="11" cy="-4" r="6" fill="#b66dff"/>
+        <circle cx="7" cy="10" r="6" fill="#b66dff"/>
+        <circle cx="-7" cy="10" r="6" fill="#b66dff"/>
+        <circle cx="-11" cy="-4" r="6" fill="#b66dff"/>
+      </g>
+      <g transform="translate(720,575)">
+        <circle r="5" fill="#ffd84d"/>
+        <circle cx="0" cy="-10" r="5" fill="#ff9ecb"/>
+        <circle cx="9" cy="-3" r="5" fill="#ff9ecb"/>
+        <circle cx="6" cy="8" r="5" fill="#ff9ecb"/>
+        <circle cx="-6" cy="8" r="5" fill="#ff9ecb"/>
+        <circle cx="-9" cy="-3" r="5" fill="#ff9ecb"/>
+      </g>
+    </g>
+  </svg>
+
+  <!-- 雲（HTML要素：横に流れる） -->
+  <svg class="cloud c1" width="160" height="70" viewBox="0 0 160 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g fill="#ffffff">
+      <ellipse cx="50" cy="45" rx="44" ry="24"/>
+      <ellipse cx="90" cy="38" rx="38" ry="28"/>
+      <ellipse cx="120" cy="48" rx="34" ry="20"/>
+    </g>
+  </svg>
+  <svg class="cloud c2" width="160" height="70" viewBox="0 0 160 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g fill="#ffffff">
+      <ellipse cx="50" cy="45" rx="44" ry="24"/>
+      <ellipse cx="90" cy="38" rx="38" ry="28"/>
+      <ellipse cx="120" cy="48" rx="34" ry="20"/>
+    </g>
+  </svg>
+  <svg class="cloud c3" width="160" height="70" viewBox="0 0 160 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g fill="#ffffff">
+      <ellipse cx="50" cy="45" rx="44" ry="24"/>
+      <ellipse cx="90" cy="38" rx="38" ry="28"/>
+      <ellipse cx="120" cy="48" rx="34" ry="20"/>
+    </g>
+  </svg>
+
+  <!-- スタート画面の中身 -->
+  <div class="start-inner">
+    <h1 class="title">
+      <span class="c0">カ</span><span class="c1">タ</span><span class="c2">カ</span><span class="c3">ナ</span>を<br>
+      <span class="c4">お</span><span class="c5">ぼ</span><span class="c0">え</span><span class="c1">よ</span><span class="c2">う</span>！
+    </h1>
+    <p class="subtitle">たのしく まなぼう🌟</p>
+
+    <!-- うさぎ（中央・ふわふわ）。JSで共通SVGを差し込む -->
+    <div class="rabbit-stage" id="startRabbit"></div>
+
+    <!-- メニュー -->
+    <div class="menu">
+      <button class="btn-main" id="btnToQuiz">まぎらわしいじ クイズ</button>
+    </div>
+  </div>
+</section>
+
+
+<!-- =========================================================
+     2. まぎらわしいじクイズ画面
+     ========================================================= -->
+<section id="quizScreen" class="screen">
+
+  <!-- 上部バー -->
+  <div class="topbar">
+    <button class="btn-back" id="btnBack">← もどる</button>
+    <div class="score">
+      <span class="pill">せいかい：<b id="scoreCorrect">0</b></span>
+      <span class="pill total">もんだいすう：<b id="scoreTotal">0</b></span>
+    </div>
+  </div>
+
+  <!-- うさぎ＋吹き出し -->
+  <div class="quiz-head">
+    <div class="quiz-rabbit" id="quizRabbit"></div>
+    <div class="bubble" id="bubble">いっしょに がんばろう！</div>
+  </div>
+
+  <!-- 問題カード -->
+  <div class="quiz-card">
+    <!-- ひらがな（クリックで再読み上げ） -->
+    <div class="hira" id="hira" title="クリックでもう一度きけるよ">あ</div>
+    <p class="replay-hint">クリックするともう一度きけるよ</p>
+
+    <p class="question-label">カタカナはどっち？</p>
+
+    <!-- 2択ボタン -->
+    <div class="choices">
+      <button class="choice" id="choice0"></button>
+      <button class="choice" id="choice1"></button>
+    </div>
+
+    <!-- 判定メッセージ -->
+    <div class="result-msg" id="resultMsg"></div>
+  </div>
+
+  <!-- カウントダウン＋次へ -->
+  <div class="next-area">
+    <div class="countdown" id="countdown"><div class="fill" id="countdownFill"></div></div>
+    <button class="btn-next" id="btnNext">つぎのもんだい</button>
+  </div>
+
+  <!-- ちがいのポイント -->
+  <div class="diff-box" id="diffBox">
+    <span class="diff-title">ちがいのポイント</span>
+    <div class="diff-row" id="diffRow"></div>
+  </div>
+</section>
+
+
+<!-- =========================================================
+     3. けっか（ゲーム終了）画面
+     ========================================================= -->
+<section id="resultScreen" class="screen">
+  <!-- 花火（全問正解時のみ表示・JSで生成） -->
+  <div class="fireworks" id="fireworks"></div>
+
+  <div class="result-wrap">
+    <!-- 称号に応じた表情のうさぎ -->
+    <div class="result-rabbit" id="resultRabbit"></div>
+
+    <!-- 称号（絵文字＋名前） -->
+    <div class="rank-emoji" id="rankEmoji">🏆</div>
+    <h2 class="rank-name" id="rankName">称号</h2>
+
+    <!-- せいかい数 -->
+    <p class="rank-score"><b id="resultCorrect">0</b>問 / 15問 せいかい！</p>
+
+    <!-- ボタン2つ -->
+    <div class="result-buttons">
+      <button class="btn-main" id="btnRetry">もういちど チャレンジ！</button>
+      <button class="btn-end" id="btnEnd">いったん おわり</button>
+    </div>
+  </div>
+</section>
+
+
+<script>
+"use strict";
+
+/* =========================================================
+   問題ペアデータ（全15ペア）
+   ・配列で管理し、追加・編集しやすい構造
+   ・hiragana：表示するひらがな（形で答えさせないため必ずひらがな）
+   ・correct  ：正解のカタカナ
+   ・other    ：まぎらわしい不正解のカタカナ
+   ・hintA    ：correct の違いの説明
+   ・hintB    ：other   の違いの説明
+   ========================================================= */
+const quizPairs = [
+  { hiragana:'う', correct:'ウ', other:'ワ', hintA:'上の点がひとつ',   hintB:'よこにひろがる' },
+  { hiragana:'わ', correct:'ワ', other:'ウ', hintA:'よこにひろがる',   hintB:'上の点がひとつ' },
+  { hiragana:'そ', correct:'ソ', other:'ン', hintA:'ななめ線が上から', hintB:'ななめ線が下から' },
+  { hiragana:'ん', correct:'ン', other:'ソ', hintA:'ななめ線が下から', hintB:'ななめ線が上から' },
+  { hiragana:'し', correct:'シ', other:'ツ', hintA:'点が左にならぶ',   hintB:'点が上にならぶ' },
+  { hiragana:'つ', correct:'ツ', other:'シ', hintA:'点が上にならぶ',   hintB:'点が左にならぶ' },
+  { hiragana:'あ', correct:'ア', other:'マ', hintA:'右上にはねる',     hintB:'よこ線が2本' },
+  { hiragana:'ま', correct:'マ', other:'ア', hintA:'よこ線が2本',      hintB:'右上にはねる' },
+  { hiragana:'く', correct:'ク', other:'ケ', hintA:'曲線のみ',         hintB:'よこ線がある' },
+  { hiragana:'け', correct:'ケ', other:'ク', hintA:'よこ線がある',     hintB:'曲線のみ' },
+  { hiragana:'ち', correct:'チ', other:'テ', hintA:'下にはらう',       hintB:'上にとがる' },
+  { hiragana:'て', correct:'テ', other:'チ', hintA:'上にとがる',       hintB:'下にはらう' },
+  { hiragana:'ふ', correct:'フ', other:'ワ', hintA:'かぎ形',           hintB:'よこにひろがる' },
+  { hiragana:'な', correct:'ナ', other:'メ', hintA:'十字に近い',       hintB:'バツに近い' },
+  { hiragana:'め', correct:'メ', other:'ナ', hintA:'バツに近い',       hintB:'十字に近い' },
+  { hiragana:'い', correct:'イ', other:'ア', hintA:'縦線が2本',       hintB:'右上にはねる' },
+  { hiragana:'か', correct:'カ', other:'ヤ', hintA:'右にはらう',      hintB:'Yの形' },
+  { hiragana:'や', correct:'ヤ', other:'カ', hintA:'Yの形',           hintB:'右にはらう' },
+  { hiragana:'こ', correct:'コ', other:'ユ', hintA:'横線2本・短い',   hintB:'Uの形' },
+  { hiragana:'ゆ', correct:'ユ', other:'コ', hintA:'Uの形',           hintB:'横線2本・短い' },
+  { hiragana:'り', correct:'リ', other:'ン', hintA:'縦線2本',         hintB:'ななめ線' },
+  { hiragana:'ね', correct:'ネ', other:'オ', hintA:'バツ形が上',      hintB:'横線が上' },
+  { hiragana:'お', correct:'オ', other:'ネ', hintA:'横線が上',        hintB:'バツ形が上' },
+  { hiragana:'む', correct:'ム', other:'ユ', hintA:'三角に近い',      hintB:'Uの形' },
+  { hiragana:'ろ', correct:'ロ', other:'コ', hintA:'四角に近い',      hintB:'横線2本・短い' },
+];
+
+/* 1ゲームで出題する問題数（プール25ペアからシャッフルして15問出す） */
+const QUESTIONS_PER_GAME = 15;
+
+/* =========================================================
+   ほめ言葉・なぐさめ言葉・ヒント・リトライ用メッセージ
+   （吹き出しにランダム表示）
+   ========================================================= */
+const msgPraise   = ['すごい！','やったね！','かんぺき！','その調子！','正解！✨'];   // 初回正解
+const msgComfort  = ['もう一回！','ドンマイ！','きいてみよう！','がんばれ！'];        // 不正解
+const msgRetry    = ['できたね！','あきらめなかった！','えらい！'];                   // リトライ正解
+const msgIdle     = ['おとをきいてね','どっちかな？','いっしょにがんばろう！'];       // アイドル
+
+/* 配列からランダムに1つ選ぶ小さなユーティリティ */
+function pickRandom(arr){
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/* =========================================================
+   うさぎキャラクターSVG（両画面共通）
+   ・mood で口と目の形を切り替える：'normal' | 'joy' | 'sad'
+   ・関数で生成し、startRabbit / quizRabbit に差し込む
+   ========================================================= */
+function rabbitSVG(){
+  // viewBox 0 0 100 120 で耳〜顔を描く
+  return `
+  <svg viewBox="0 0 110 130" xmlns="http://www.w3.org/2000/svg" width="100%" aria-label="うさぎ">
+    <!-- よろこび時に光る★（右上） -->
+    <g class="joy-star" transform="translate(92,18)">
+      <path d="M0 -11 L3 -3 L11 -3 L4.5 2 L7 10 L0 5 L-7 10 L-4.5 2 L-11 -3 L-3 -3 Z" fill="#ffd84d" stroke="#ffb300" stroke-width="1"/>
+    </g>
+
+    <!-- 耳（外側ピンク・内側濃いピンク） -->
+    <g>
+      <ellipse cx="38" cy="30" rx="11" ry="30" fill="#ffb6d5"/>
+      <ellipse cx="38" cy="32" rx="5"  ry="22" fill="#ff8fbf"/>
+      <ellipse cx="72" cy="30" rx="11" ry="30" fill="#ffb6d5"/>
+      <ellipse cx="72" cy="32" rx="5"  ry="22" fill="#ff8fbf"/>
+    </g>
+
+    <!-- 顔（横長楕円・白〜薄ピンク） -->
+    <ellipse cx="55" cy="78" rx="42" ry="36" fill="#fff5fa" stroke="#ffd9ea" stroke-width="2"/>
+
+    <!-- ほっぺ（薄ピンク・透明度あり） -->
+    <ellipse cx="32" cy="86" rx="9" ry="6" fill="#ff9ecb" opacity="0.55"/>
+    <ellipse cx="78" cy="86" rx="9" ry="6" fill="#ff9ecb" opacity="0.55"/>
+
+    <!-- 目（黒い楕円＋白いハイライト）。ry は mood で差し替え -->
+    <g id="eyes">
+      <ellipse class="eye" cx="42" cy="74" rx="5" ry="5" fill="#3a2b22"/>
+      <ellipse class="eye" cx="68" cy="74" rx="5" ry="5" fill="#3a2b22"/>
+      <circle cx="44" cy="72" r="1.6" fill="#fff"/>
+      <circle cx="70" cy="72" r="1.6" fill="#fff"/>
+    </g>
+
+    <!-- 鼻（小さいピンクの楕円） -->
+    <ellipse cx="55" cy="84" rx="3.5" ry="2.5" fill="#ff8fbf"/>
+
+    <!-- 口（mood で path を差し替え） -->
+    <path class="mouth" d="M45 89 Q55 95 65 89" fill="none" stroke="#b76e79" stroke-width="2.4" stroke-linecap="round"/>
+  </svg>`;
+}
+
+/* うさぎの表情を変える
+   target : うさぎを入れているDOM要素
+   mood   : 'normal' | 'joy' | 'sad'
+   仕様の口パス・目ryを反映（座標は本SVGスケールに合わせて調整） */
+function setRabbitMood(target, mood){
+  const eyes  = target.querySelectorAll('.eye');
+  const mouth = target.querySelector('.mouth');
+  if(!mouth || !eyes.length) return;
+
+  if(mood === 'joy'){
+    // よろこび：目が細くなる（ry小）＋にっこり口
+    eyes.forEach(e => e.setAttribute('ry', '3'));
+    mouth.setAttribute('d', 'M44 88 Q55 98 66 88');
+  } else if(mood === 'sad'){
+    // かなしい：への字口
+    eyes.forEach(e => e.setAttribute('ry', '5'));
+    mouth.setAttribute('d', 'M45 93 Q55 86 65 93');
+  } else {
+    // ふつう
+    eyes.forEach(e => e.setAttribute('ry', '5'));
+    mouth.setAttribute('d', 'M45 89 Q55 95 65 89');
+  }
+}
+
+/* うさぎにアニメーション（joy=ジャンプ / sad=wiggle）を一度だけ付与 */
+function playRabbitAnim(target, type){
+  const cls = type === 'joy' ? 'rabbit-joy' : 'rabbit-sad';
+  target.classList.remove('rabbit-joy', 'rabbit-sad');
+  // リフローを挟んでアニメを再発火
+  void target.offsetWidth;
+  target.classList.add(cls);
+  // アニメ終了後にクラスを外す
+  setTimeout(() => target.classList.remove(cls), 900);
+}
+
+/* =========================================================
+   効果音（Web Audio API・外部ファイル不要）
+   ========================================================= */
+let audioCtx = null;
+// ユーザー操作後に AudioContext を用意（自動再生制限対策）
+function ensureAudio(){
+  if(!audioCtx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(AC) audioCtx = new AC();
+  }
+  if(audioCtx && audioCtx.state === 'suspended'){
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+// 単音を鳴らす（周波数・開始時刻・長さ・波形）
+function playTone(freq, startTime, duration, type){
+  if(!audioCtx) return;
+  const osc  = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.value = freq;
+
+  // やわらかいエンベロープ（プツッという音を防ぐ）
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(startTime);
+  osc.stop(startTime + duration + 0.02);
+}
+
+// 正解音：ド(523)・ミ(659)・ソ(784)を0.12秒間隔で順番に
+function playCorrectSound(){
+  const ctx = ensureAudio();
+  if(!ctx) return;
+  const t = ctx.currentTime;
+  playTone(523.25, t,        0.18, 'sine'); // ド
+  playTone(659.25, t + 0.12, 0.18, 'sine'); // ミ
+  playTone(783.99, t + 0.24, 0.30, 'sine'); // ソ
+}
+
+// 不正解音：200Hz→150Hzに下降するやさしいサイン波（ポヨン）
+function playWrongSound(){
+  const ctx = ensureAudio();
+  if(!ctx) return;
+  const t = ctx.currentTime;
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(200, t);
+  osc.frequency.exponentialRampToValueAtTime(150, t + 0.35);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.linearRampToValueAtTime(0.22, t + 0.03);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.42);
+}
+
+/* =========================================================
+   音声読み上げ（Web Speech API）
+   ========================================================= */
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  // 連続読み上げが重ならないよう、いったん停止
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 0.8;
+  window.speechSynthesis.speak(u);
+}
+
+/* =========================================================
+   画面遷移
+   ========================================================= */
+const startScreen  = document.getElementById('startScreen');
+const quizScreen   = document.getElementById('quizScreen');
+const resultScreen = document.getElementById('resultScreen');
+
+function showScreen(name){
+  startScreen .classList.toggle('active', name === 'start');
+  quizScreen  .classList.toggle('active', name === 'quiz');
+  resultScreen.classList.toggle('active', name === 'result');
+}
+
+/* =========================================================
+   クイズの状態管理
+   ========================================================= */
+const state = {
+  queue:       [],     // 今回のゲームの出題順（シャッフル済み・15問）
+  pos:         0,      // 現在の出題位置（0〜14）
+  correctCount:0,      // せいかい数
+  totalCount:  0,      // もんだいすう
+  answered:    false,  // この問題で「もう次へ進める状態」か（=正解済み）
+  wrongOnce:   false,  // この問題で1回でも不正解したか（リトライ判定用）
+  countedTotal:false,  // この問題のもんだいすうを既にカウントしたか
+  // 各種タイマー
+  idleTimer:   null,   // アイドル（4秒）
+  autoNext:    null,   // 自動で次へ（1.8秒）
+  retrySpeak:  null,   // 不正解0.7秒後の再読み上げ
+  fwTimer:     null,   // 花火の連続発射タイマー
+};
+
+/* 現在の問題ペアを返すショートカット */
+function currentQ(){
+  return state.queue[state.pos];
+}
+
+/* 配列をシャッフルして新しい配列を返す（Fisher–Yates） */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// DOM参照
+const elScoreCorrect = document.getElementById('scoreCorrect');
+const elScoreTotal   = document.getElementById('scoreTotal');
+const elBubble       = document.getElementById('bubble');
+const elHira         = document.getElementById('hira');
+const elChoices      = [document.getElementById('choice0'), document.getElementById('choice1')];
+const elResultMsg    = document.getElementById('resultMsg');
+const elCountdown    = document.getElementById('countdown');
+const elCountdownFill= document.getElementById('countdownFill');
+const elBtnNext      = document.getElementById('btnNext');
+const elDiffRow      = document.getElementById('diffRow');
+const quizRabbitEl   = document.getElementById('quizRabbit');
+
+/* すべてのタイマーをクリア（問題切り替え・画面離脱時に呼ぶ） */
+function clearAllTimers(){
+  clearTimeout(state.idleTimer);
+  clearTimeout(state.autoNext);
+  clearTimeout(state.retrySpeak);
+  state.idleTimer = state.autoNext = state.retrySpeak = null;
+}
+
+/* アイドルタイマーを開始/リセット（4秒答えないとヒント） */
+function resetIdleTimer(){
+  clearTimeout(state.idleTimer);
+  state.idleTimer = setTimeout(() => {
+    // 正解済みでなければヒントを出す
+    if(!state.answered){
+      setBubble(pickRandom(msgIdle));
+    }
+  }, 4000);
+}
+
+/* 吹き出しの文言を変える */
+function setBubble(text){
+  elBubble.textContent = text;
+}
+
+/* スコア表示を更新 */
+function updateScore(){
+  elScoreCorrect.textContent = state.correctCount;
+  elScoreTotal.textContent   = state.totalCount;
+}
+
+/* =========================================================
+   問題を表示する
+   ========================================================= */
+function loadQuestion(){
+  clearAllTimers();
+
+  const q = currentQ();
+
+  // 状態リセット
+  state.answered     = false;
+  state.wrongOnce    = false;
+  state.countedTotal = false;
+
+  // ひらがな表示
+  elHira.textContent = q.hiragana;
+
+  // 2択ボタンの中身をランダムな左右順で配置
+  const options = Math.random() < 0.5
+    ? [q.correct, q.other]
+    : [q.other, q.correct];
+
+  elChoices.forEach((btn, i) => {
+    btn.textContent = options[i];
+    btn.disabled = false;
+    btn.classList.remove('correct', 'wrong');
+    btn.dataset.value = options[i];
+    // 正解かどうかを保持
+    btn.dataset.isCorrect = (options[i] === q.correct) ? '1' : '0';
+  });
+
+  // 判定メッセージ・カウントダウン・次へボタンを初期化
+  elResultMsg.textContent = '';
+  elResultMsg.className = 'result-msg';
+  hideNextArea();
+
+  // ちがいのポイント表示
+  elDiffRow.innerHTML =
+    `<b>${q.correct}</b> → ${q.hintA}　／　<b>${q.other}</b> → ${q.hintB}`;
+
+  // うさぎをふつう顔に
+  setRabbitMood(quizRabbitEl, 'normal');
+  setBubble('カタカナはどっち？');
+
+  // 出題時に読み上げ
+  speak(q.hiragana);
+
+  // アイドル監視開始
+  resetIdleTimer();
+}
+
+/* カウントダウンバー・次へボタンの表示制御 */
+function showNextArea(){
+  elBtnNext.classList.add('show');
+  elCountdown.classList.add('show');
+  // バーのアニメをリスタート
+  elCountdownFill.classList.remove('run');
+  void elCountdownFill.offsetWidth;
+  elCountdownFill.classList.add('run');
+}
+function hideNextArea(){
+  elBtnNext.classList.remove('show');
+  elCountdown.classList.remove('show');
+  elCountdownFill.classList.remove('run');
+}
+
+/* =========================================================
+   答え合わせ
+   ========================================================= */
+function onChoiceClick(btn){
+  // 既に正解済みなら何もしない
+  if(state.answered) return;
+
+  ensureAudio();                 // 操作時にオーディオを有効化
+  clearTimeout(state.idleTimer); // アイドル監視を止める
+
+  const isCorrect = btn.dataset.isCorrect === '1';
+
+  // このターンで初めて回答した瞬間に「もんだいすう」を+1
+  // （不正解→リトライでも二重カウントしないよう countedTotal で管理）
+  if(!state.countedTotal){
+    state.totalCount++;
+    state.countedTotal = true;
+    updateScore();
+  }
+
+  if(isCorrect){
+    handleCorrect(btn);
+  } else {
+    handleWrong(btn);
+  }
+}
+
+/* 正解処理（初回正解 と リトライ正解 を分岐） */
+function handleCorrect(btn){
+  state.answered = true;
+
+  // 見た目：緑＋ポップ
+  btn.classList.add('correct');
+  // 両方のボタンを無効化
+  elChoices.forEach(b => b.disabled = true);
+
+  // 効果音・うさぎの演出
+  playCorrectSound();
+  setRabbitMood(quizRabbitEl, 'joy');
+  playRabbitAnim(quizRabbitEl, 'joy');
+
+  if(state.wrongOnce){
+    // --- リトライ正解（せいかい数はカウントしない） ---
+    elResultMsg.textContent = 'できた！よくがんばった！🌟';
+    elResultMsg.className = 'result-msg ok';
+    setBubble(pickRandom(msgRetry));
+  } else {
+    // --- 初回正解（せいかい数+1） ---
+    state.correctCount++;
+    updateScore();
+    elResultMsg.textContent = 'せいかい！🎉';
+    elResultMsg.className = 'result-msg ok';
+    setBubble(pickRandom(msgPraise));
+  }
+
+  // カウントダウン表示＆1.8秒で自動的に次へ
+  showNextArea();
+  state.autoNext = setTimeout(goNext, 1800);
+}
+
+/* 不正解処理 */
+function handleWrong(btn){
+  state.wrongOnce = true;
+
+  // 見た目：赤＋シェイク → 無効化（このボタンはもう押せない）
+  btn.classList.add('wrong');
+  btn.disabled = true;
+
+  // 効果音・うさぎの演出
+  playWrongSound();
+  setRabbitMood(quizRabbitEl, 'sad');
+  playRabbitAnim(quizRabbitEl, 'sad');
+
+  elResultMsg.textContent = 'ざんねん！もう一回おしてみよう！';
+  elResultMsg.className = 'result-msg ng';
+  setBubble(pickRandom(msgComfort));
+
+  // 0.7秒後にひらがなをもう一度読み上げ
+  state.retrySpeak = setTimeout(() => {
+    speak(currentQ().hiragana);
+  }, 700);
+
+  // もう一方（正解）のボタンはまだ押せる状態のまま。
+  // 答えを続けられるよう、アイドル監視を再開する。
+  resetIdleTimer();
+}
+
+/* 次の問題へ（15問終わったら結果画面へ） */
+function goNext(){
+  clearAllTimers();
+  state.pos++;
+  if(state.pos >= QUESTIONS_PER_GAME){
+    showResult();
+    return;
+  }
+  loadQuestion();
+}
+
+/* =========================================================
+   ゲーム開始：問題をシャッフルして最初から
+   （プール全ペアをシャッフル→先頭15問を出題。
+     すべて異なる問題なので同じ問題が連続して出ることはない）
+   ========================================================= */
+function startGame(){
+  stopFireworks();
+  state.queue        = shuffle(quizPairs).slice(0, QUESTIONS_PER_GAME);
+  state.pos          = 0;
+  state.correctCount = 0;
+  state.totalCount   = 0;
+  updateScore();
+  showScreen('quiz');
+  loadQuestion();
+}
+
+/* =========================================================
+   称号判定：正解数 → 称号情報を返す
+   ========================================================= */
+function getRank(correct){
+  if(correct >= 15) return { emoji:'👑', name:'カタカナのかみさま',       mood:'joy',    fireworks:true  };
+  if(correct >= 14) return { emoji:'🏆', name:'カタカナはかせ',           mood:'joy',    fireworks:false };
+  if(correct >= 12) return { emoji:'💫', name:'カタカナのめいじん',       mood:'joy',    fireworks:false };
+  if(correct >= 9 ) return { emoji:'🌟', name:'カタカナのゆうしゃ',       mood:'joy',    fireworks:false };
+  if(correct >= 5 ) return { emoji:'⭐', name:'カタカナのけんきゅうせい', mood:'normal', fireworks:false };
+  return                   { emoji:'🌱', name:'カタカナのたまご',         mood:'sad',    fireworks:false };
+}
+
+/* =========================================================
+   結果画面を表示
+   ========================================================= */
+const resultRabbitEl = document.getElementById('resultRabbit');
+
+function showResult(){
+  clearAllTimers();
+  window.speechSynthesis && window.speechSynthesis.cancel();
+
+  const rank = getRank(state.correctCount);
+
+  // 称号テキスト
+  document.getElementById('rankEmoji').textContent   = rank.emoji;
+  document.getElementById('rankName').textContent    = rank.name;
+  document.getElementById('resultCorrect').textContent = state.correctCount;
+
+  // うさぎを称号に応じた表情に
+  setRabbitMood(resultRabbitEl, rank.mood);
+  if(rank.mood === 'joy') playRabbitAnim(resultRabbitEl, 'joy');
+
+  showScreen('result');
+
+  // お祝いの音
+  playCorrectSound();
+
+  // 全問正解なら花火、そうでなければ消す
+  if(rank.fireworks) launchFireworks();
+  else               stopFireworks();
+}
+
+/* =========================================================
+   花火アニメーション（全問正解時）
+   ========================================================= */
+const fwColors = ['#ff7eb3','#ffd84d','#4cc9f0','#7ac74f','#b66dff','#ff9ecb'];
+
+// 1回分の花火（中心から放射状に粒子を飛ばす）
+function makeBurst(){
+  const fw = document.getElementById('fireworks');
+  const cx = 15 + Math.random() * 70;   // 画面内のランダムな位置（％）
+  const cy = 10 + Math.random() * 45;
+  const color = fwColors[Math.floor(Math.random() * fwColors.length)];
+  const count = 14;
+  for(let i = 0; i < count; i++){
+    const ang  = (Math.PI * 2 / count) * i;
+    const dist = 60 + Math.random() * 45;
+    const p = document.createElement('div');
+    p.className = 'fw-particle';
+    p.style.left = cx + '%';
+    p.style.top  = cy + '%';
+    p.style.background = color;
+    p.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
+    p.style.setProperty('--dy', Math.sin(ang) * dist + 'px');
+    fw.appendChild(p);
+    // 飛び終わった粒子は片付ける
+    setTimeout(() => p.remove(), 1300);
+  }
+}
+
+// 花火を数回連続で打ち上げる
+function launchFireworks(){
+  const fw = document.getElementById('fireworks');
+  fw.innerHTML = '';
+  fw.classList.add('show');
+  let rounds = 0;
+  function round(){
+    for(let b = 0; b < 3; b++) makeBurst();
+    rounds++;
+    if(rounds < 5){
+      state.fwTimer = setTimeout(round, 850);
+    }
+  }
+  round();
+}
+
+// 花火を止めて片付ける
+function stopFireworks(){
+  clearTimeout(state.fwTimer);
+  state.fwTimer = null;
+  const fw = document.getElementById('fireworks');
+  fw.classList.remove('show');
+  fw.innerHTML = '';
+}
+
+/* =========================================================
+   イベント登録
+   ========================================================= */
+// スタート → クイズ（シャッフルして開始）
+document.getElementById('btnToQuiz').addEventListener('click', () => {
+  ensureAudio();          // 最初のユーザー操作で音声を有効化
+  startGame();
+});
+
+// もどる → スタート
+document.getElementById('btnBack').addEventListener('click', () => {
+  clearAllTimers();
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  showScreen('start');
+});
+
+// 結果画面：もういちど チャレンジ！（シャッフルし直して最初から）
+document.getElementById('btnRetry').addEventListener('click', () => {
+  ensureAudio();
+  startGame();
+});
+
+// 結果画面：いったん おわり（スタート画面へ）
+document.getElementById('btnEnd').addEventListener('click', () => {
+  stopFireworks();
+  showScreen('start');
+});
+
+// 2択ボタン
+elChoices.forEach(btn => {
+  btn.addEventListener('click', () => onChoiceClick(btn));
+});
+
+// ひらがなクリックで再読み上げ
+elHira.addEventListener('click', () => {
+  ensureAudio();
+  speak(currentQ().hiragana);
+  resetIdleTimer();       // 操作があったのでアイドルもリセット
+});
+
+// つぎのもんだいボタン
+elBtnNext.addEventListener('click', goNext);
+
+/* =========================================================
+   初期化：両画面にうさぎSVGを差し込む
+   ========================================================= */
+function init(){
+  document.getElementById('startRabbit').innerHTML = rabbitSVG();
+  quizRabbitEl.innerHTML = rabbitSVG();
+  resultRabbitEl.innerHTML = rabbitSVG();
+  setRabbitMood(quizRabbitEl, 'normal');
+  setRabbitMood(resultRabbitEl, 'normal');
+}
+init();
+</script>
+</body>
+</html>
